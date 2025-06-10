@@ -21,13 +21,8 @@ namespace Malshinon
 
 
         //חיפוש בנאדם במאגר
-        public bool SearchPerson()
+        public bool SearchPerson(string firstName, string lastName)
         {
-            Console.WriteLine("Enter your first Name: ");
-            string firstName = Console.ReadLine();
-            Console.WriteLine("Enter your last Name: ");
-            string lastName = Console.ReadLine();
-
             _conn.Open();
             string query = $"SELECT * FROM People WHERE first_name = '{firstName}' AND last_name = '{lastName}'";
 
