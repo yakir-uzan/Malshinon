@@ -8,7 +8,7 @@ using MySql.Data.MySqlClient;
 
 namespace Malshinon
 {
-    internal class MalshinonMng
+    internal class MalshinonService
     {
         MalshinonDAL dal = new MalshinonDAL();
 
@@ -18,7 +18,6 @@ namespace Malshinon
             string secretCode = $"{firstName[0]}{lastName[0]}";
             return secretCode;
         }
-
 
 
         //בדיקה אם אדם קיים במערכת, אם לא - נוצר אדם חדש עם טייפ מלשין
@@ -60,9 +59,6 @@ namespace Malshinon
                 if (char.IsUpper(word[0]))
                 {
                     fullName.Add(word);
-                    //string firstName = fullName[0];
-                    //string lastName = fullName[1];
-                    
                 }
 
                 else
