@@ -120,7 +120,7 @@ namespace Malshinon
 
             if (dal.GetNumMention(targetId) >= 20)
             {
-                Console.WriteLine("⚠️ ALERT: Target is a potential threat!");
+                Console.WriteLine("ALERT: Target is a potential threat!");
             }
 
 
