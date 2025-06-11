@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Google.Protobuf.WellKnownTypes;
+using MySql.Data.MySqlClient;
+using Mysqlx.Crud;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MySql.Data.MySqlClient;
+using static System.Net.Mime.MediaTypeNames;
 
 
 namespace Malshinon
@@ -41,6 +44,8 @@ namespace Malshinon
             }
         }
 
+
+
         //---------------------------------------------------------
          
         //זרימת הגשת דוח
@@ -49,8 +54,8 @@ namespace Malshinon
         public List<string> SearchTarget()
         {
             Console.WriteLine("Enter free text of the report: ");
-            string report = Console.ReadLine();
-            string[] splitReport = report.Split();
+            string reportTxt = Console.ReadLine();
+            string[] splitReport = reportTxt.Split();
 
             List<string> fullName = new List<string>();
 
@@ -70,24 +75,57 @@ namespace Malshinon
         }
 
         //ניהול זרימת מידע
-        public string MngReportFlow()
+        public void MngReportFlow()
         {
+            Console.WriteLine("Enter your reporter ID:");
+            int reporterId = int.Parse(Console.ReadLine());
+
+            Console.WriteLine("Enter report text starting with uppercase initials of first and last name:");
+            string reportText = Console.ReadLine();
+
             List<string> fullName = SearchTarget();
             string firstName = fullName[0];
             string lastName = fullName[1];
 
-            bool exists = dal.SearchPerson(firstName, lastName);
-            if (exists)
+            int targetId;
+            bool targetExists = dal.SearchPerson(firstName, lastName);
+
+            if (targetExists)
             {
-                string id = $"SELECT id FROM People WHERE firstName = {first_name} AND lastName = {last_name}";
-                return id;
+                targetId = dal.GetPeopleId(firstName, lastName);
+
             }
             else
             {
                 string secretCode = CreateSecretCode(firstName, lastName);
                 dal.InsertNewPerson(firstName, lastName, secretCode, "target");
                 Console.WriteLine("The person has been successfully added to the system!");
+                targetId = dal.GetPeopleId(firstName, lastName); 
             }
+
+            //מוסיף את הדיווח לטבלת המודיעין עם האיי-דיז של המדווח והמטרה
+            dal.InsertIntelReport(reporterId, targetId, reportText, DateTime.Now);
+            Console.WriteLine("Report submitted successfully.");
+
+            //עדכון המדדים של המשימות והמטרות לפי איי-דיז
+            dal.UpdateMentionCount(targetId);
+            dal.UpdateReportCount(reporterId);
+
+            //בודק לפי איי-די אם מספר הדוחות >= ל10 וממוצע המיליםשל הדוחות גדול מ100
+            if (dal.GetNumReport(reporterId) >= 10 && dal.GetAvgNumWords(reporterId) >= 100)
+            {
+                dal.UpdatePersonType(reporterId, "potential_agent");
+                Console.WriteLine("Reporter promoted to potential_agent.");
+            }
+
+            if (dal.GetNumMention(targetId) >= 20)
+            {
+                Console.WriteLine("⚠️ ALERT: Target is a potential threat!");
+            }
+
+
+
         }
+        
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Malshinon
 {
-    internal class intelReports
+    internal class IntelReports
     {
         public int id { get; set; }
         public int reporter_id { get; set; }
@@ -15,7 +15,7 @@ namespace Malshinon
         public DateTime timestamp { get; set; }
     
 
-    public intelReports(int id, int reporter_id, int target_id, string text, DateTime timestamp)
+    public IntelReports(int id, int reporter_id, int target_id, string text, DateTime timestamp)
         {
             this.id = id;
             this.reporter_id = reporter_id;
