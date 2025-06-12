@@ -13,16 +13,12 @@ namespace Malshinon
 {
     internal class MalshinonService
     {
+        //ייבוא פונקציות העזר והדאל לקובץ הנוכחי
         MalshinonDAL dal = new MalshinonDAL();
+        MalshinonHelper help = new MalshinonHelper();
+            
 
-        // יצירת סיקרט קוד
-        public string CreateSecretCode(string firstName, string lastName)
-        {
-            string secretCode = $"{firstName[0]}{lastName[0]}";
-            return secretCode;
-        }
-
-        //בדיקה אם אדם קיים במערכת, אם לא - נוצר אדם חדש עם טייפ מלשין
+        //בדיקה אם אדם קיים במערכת, אם לא אז נוצר אדם חדש עם טייפ מלשין
         public void MngPersonFlow()
         {
             Console.WriteLine("Enter your first Name: ");
@@ -37,7 +33,7 @@ namespace Malshinon
             }
             else
             {
-                string secretCode = CreateSecretCode(firstName, lastName);
+                string secretCode = help.CreateSecretCode(firstName, lastName);
                 dal.InsertNewPerson(firstName, lastName, secretCode, "reporter");
                 Console.WriteLine("The person has been successfully added to the system!");
             }
@@ -45,32 +41,8 @@ namespace Malshinon
 
 
         //---------------------------------------------------------
-         
+
         //זרימת הגשת דוח
-
-        //חיפוש מטרה בדוח
-        public List<string> SearchTarget()
-        {
-            Console.WriteLine("Enter free text of the report: ");
-            string reportTxt = Console.ReadLine();
-            string[] splitReport = reportTxt.Split();
-
-            List<string> fullName = new List<string>();
-
-            foreach (string word in splitReport)
-            {
-                if (char.IsUpper(word[0]))
-                {
-                    fullName.Add(word);
-                }
-
-                else
-                {
-                    Console.WriteLine("Please enter the name of the reporter...");
-                }
-            }
-            return fullName;
-        }
 
         //ניהול זרימת מידע
         public void MngReportFlow()
@@ -81,9 +53,24 @@ namespace Malshinon
             Console.WriteLine("Enter report text starting with uppercase initials of first and last name:");
             string reportText = Console.ReadLine();
 
-            List<string> fullName = SearchTarget();
-            string firstName = fullName[0];
-            string lastName = fullName[1];
+            string fullName = help.SearchTarget(reportText);
+
+            if (string.IsNullOrEmpty(fullName))
+            {
+                Console.WriteLine("Target name not found.");
+                return;
+            }
+
+            string[] names = fullName.Split(' ');
+
+            if (names.Length < 2)
+            {
+                Console.WriteLine("Target name format invalid.");
+                return;
+            }
+
+            string firstName = names[0];
+            string lastName = names[1];
 
             int targetId;
             bool targetExists = dal.SearchPerson(firstName, lastName);
@@ -91,18 +78,17 @@ namespace Malshinon
             if (targetExists)
             {
                 targetId = dal.GetPeopleId(firstName, lastName);
-
             }
             else
             {
-                string secretCode = CreateSecretCode(firstName, lastName);
+                string secretCode = help.CreateSecretCode(firstName, lastName);
                 dal.InsertNewPerson(firstName, lastName, secretCode, "target");
                 Console.WriteLine("The person has been successfully added to the system!");
                 targetId = dal.GetPeopleId(firstName, lastName); 
             }
 
             //מוסיף את הדיווח לטבלת המודיעין עם האיי-דיז של המדווח והמטרה
-            dal.InsertIntelReport(reporterId, targetId, reportText, DateTime.Now);
+            dal.InsertIntelReport(reporterId, targetId, reportText);
             Console.WriteLine("Report submitted successfully.");
 
             //עדכון העמודות של המשימות והמטרות לפי איי-דיז
