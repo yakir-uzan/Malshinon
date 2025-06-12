@@ -22,7 +22,6 @@ namespace Malshinon
             return secretCode;
         }
 
-
         //בדיקה אם אדם קיים במערכת, אם לא - נוצר אדם חדש עם טייפ מלשין
         public void MngPersonFlow()
         {
@@ -43,7 +42,6 @@ namespace Malshinon
                 Console.WriteLine("The person has been successfully added to the system!");
             }
         }
-
 
 
         //---------------------------------------------------------
@@ -107,24 +105,24 @@ namespace Malshinon
             dal.InsertIntelReport(reporterId, targetId, reportText, DateTime.Now);
             Console.WriteLine("Report submitted successfully.");
 
-            //עדכון המדדים של המשימות והמטרות לפי איי-דיז
+            //עדכון העמודות של המשימות והמטרות לפי איי-דיז
             dal.UpdateMentionCount(targetId);
             dal.UpdateReportCount(reporterId);
 
-            //בודק לפי איי-די אם מספר הדוחות >= ל10 וממוצע המיליםשל הדוחות גדול מ100
+            //בודק לפי איי-די אם מספר הדוחות >= ל10 וממוצע המילים של הדוחות גדול מ100
+            // מעדכן את הטייפ ל"פוטנצייאלי" ומדפיס הודעה
             if (dal.GetNumReport(reporterId) >= 10 && dal.GetAvgNumWords(reporterId) >= 100)
             {
                 dal.UpdatePersonType(reporterId, "potential_agent");
                 Console.WriteLine("Reporter promoted to potential_agent.");
             }
 
+            //בודק אם יש 20 דיווחים ויותר על המולשן
+            //מדפיס אזהרה
             if (dal.GetNumMention(targetId) >= 20)
             {
                 Console.WriteLine("ALERT: Target is a potential threat!");
             }
-
-
-
         }
         
     }

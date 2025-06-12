@@ -1,5 +1,6 @@
 ﻿using MySql.Data.MySqlClient;
 using Mysqlx.Crud;
+using Org.BouncyCastle.Tls.Crypto;
 using System;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -15,34 +16,70 @@ internal class MalshinonDAL
     }
 
     //============================================================================//
-    
+
     //          == מתודות שונות ==//
 
     // מתודה שמפעילה מתודות שלא מחזירות כלום מהדאטה - בייס  
     private void ExecuteCommand(string query)
     {
-        _conn.Open();
-        MySqlCommand cmd = new MySqlCommand(query, _conn);
-        cmd.ExecuteNonQuery();
-        _conn.Close();
+        try
+        {
+            _conn.Open();
+            MySqlCommand cmd = new MySqlCommand(query, _conn);
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in ExecuteCommand: " + ex.Message);
+        }
+        finally
+        {
+            _conn.Close();
+        }
     }
 
     // מתודה כללית שמפעילה מתודות שמחזירות משו מהדאטה בייס
     private MySqlDataReader ExecuteReader(string query)
     {
-        _conn.Open();
-        MySqlCommand cmd = new MySqlCommand(query, _conn);
-        return cmd.ExecuteReader();
+        try
+        {
+            _conn.Open();
+            MySqlCommand cmd = new MySqlCommand(query, _conn);
+            return cmd.ExecuteReader();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in ExecuteReader: " + ex.Message);
+            _conn.Close();
+            throw;
+        }
     }
 
     // מתודה בוליאנית שבודקת אם האדם קיים בטבלה
      public bool SearchPerson(string firstName, string lastName)
     {
         string query = "SELECT 1 FROM People WHERE first_name = '" + firstName + "' AND last_name = '" + lastName + "' LIMIT 1";
-        MySqlDataReader reader = ExecuteReader(query);
-        bool exists = reader.Read();
-        reader.Close();
-        _conn.Close();
+        MySqlDataReader reader = null;
+        bool exists = false;
+
+        try
+        {
+            reader = ExecuteReader(query);
+            exists = reader.Read();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in SearchPerson: " + ex.Message);
+            throw;
+        }
+        finally
+        {
+            if (reader != null && !reader.IsClosed)
+                reader.Close();
+            if (_conn.State == System.Data.ConnectionState.Open)
+                _conn.Close();
+        }
+
         return exists;
     }
 
@@ -67,99 +104,210 @@ internal class MalshinonDAL
     public void GetPersonByName(string firstName, string lastName)
     {
         string query = "SELECT * FROM People WHERE first_name = '" + firstName + "' AND last_name = '" + lastName + "'";
-        MySqlDataReader reader = ExecuteReader(query);
-        while (reader.Read())
+        MySqlDataReader reader = null;
+
+        try
         {
-            Console.WriteLine(PersonToString(reader));
+            reader = ExecuteReader(query);
+            while (reader.Read())
+            {
+                Console.WriteLine(PersonToString(reader));
+            }
         }
-        reader.Close();
-        _conn.Close();
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in GetPersonByName: " + ex.Message);
+            throw;
+        }
+        finally
+        {
+            if (reader != null && !reader.IsClosed)
+                reader.Close();
+            if (_conn.State == System.Data.ConnectionState.Open)
+                _conn.Close();
+        }
     }
 
     // מדפיס את הבנאדם לפי סיקרט - קוד
     public void GetPersonBySecretCode(string secretCode)
     {
         string query = "SELECT * FROM People WHERE secret_code = '" + secretCode + "'";
-        MySqlDataReader reader = ExecuteReader(query);
-        while (reader.Read())
+        MySqlDataReader reader = null;
+
+        try
         {
-            Console.WriteLine(PersonToString(reader));
+            reader = ExecuteReader(query);
+            while (reader.Read())
+            {
+                Console.WriteLine(PersonToString(reader));
+            }
         }
-        reader.Close();
-        _conn.Close();
-    }
-
-    // מדפיס את המלשינים עם כמות הדוחות שלהם
-    public int GetNumReport(int Id)
-    {
-        string query = $"SELECT num_report FROM People WHERE id = 'Id'";
-        MySqlDataReader reader = ExecuteReader(query);
-        int numReport = -1;
-
-        if (reader.Read())
+        catch (Exception ex)
         {
-            numReport = int.Parse(reader["num_report"].ToString());
+            Console.WriteLine("Error in GetPersonBySecretCode: " + ex.Message);
+            throw;
         }
-
-        reader.Close();
-        _conn.Close();
-        return numReport;
+        finally
+        {
+            if (reader != null && !reader.IsClosed)
+                reader.Close();
+            if (_conn.State == System.Data.ConnectionState.Open)
+                _conn.Close();
+        }
     }
 
     // מדפיס את כל המולשנים עם המידע שלהם
     public void GetTargetStats(int Id)
     {
-        string query = $"SELECT num_mention FROM People WHERE id = 'Id'";
-        MySqlDataReader reader = ExecuteReader(query);
+        string query = $"SELECT num_mention FROM People WHERE id = {Id}";
+        MySqlDataReader reader = null;
 
-        while (reader.Read())
+        try
         {
-            Console.WriteLine(PersonToString(reader));
+            reader = ExecuteReader(query);
+            while (reader.Read())
+            {
+                Console.WriteLine(PersonToString(reader));
+            }
         }
-        reader.Close();
-        _conn.Close();
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in GetTargetStats: " + ex.Message);
+            throw;
+        }
+        finally
+        {
+            if (reader != null && !reader.IsClosed)
+                reader.Close();
+            if (_conn.State == System.Data.ConnectionState.Open)
+                _conn.Close();
+        }
     }
 
-    //מתודה שמחזירה איי-די לפי שם ומשפחה
+    // מתודה שמחזירה איי-די לפי שם ומשפחה
     public int GetPeopleId(string firstName, string lastName)
     {
         string query = $"SELECT id FROM People WHERE first_name = '{firstName}' AND last_name = '{lastName}' LIMIT 1";
-        MySqlDataReader reader = ExecuteReader(query);
-
+        MySqlDataReader reader = null;
         int id = -1;
 
-        if (reader.Read())
+        try
         {
-            id = reader.GetInt32("id");
+            reader = ExecuteReader(query);
+            if (reader.Read())
+            {
+                id = reader.GetInt32("id");
+            }
         }
-
-        reader.Close();
-        _conn.Close();
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in GetPeopleId: " + ex.Message);
+            throw;
+        }
+        finally
+        {
+            if (reader != null && !reader.IsClosed)
+                reader.Close();
+            if (_conn.State == System.Data.ConnectionState.Open)
+                _conn.Close();
+        }
 
         return id;
     }
 
-    //מתודה שמחזירה את ממוצע המילים של הדוחות פר בנאדם
-    public int GetAvgNumWords(int id)
+    // מתודה שמחזירה את ממוצע המילים של הדוחות פר איי-די
+    public double GetAvgNumWords(int id)
     {
-        string query = $"SELECT p.id, AVG(CHAR_LENGTH(ir.text)) AS avg_length, p.type FROM people p JOIN intelReports ir ON ir.reporter_id = p.id"; GROUP BY p.id\r\n HAVING avg_length > 100   \r\n AND p.type != 'agent' \r\n ORDER BY avg_length; ";
-        MySqlDataReader reader = ExecuteReader(query);
+        string query = $"SELECT AVG(LENGTH(ir.text) - LENGTH(REPLACE(ir.text, ' ', '')) + 1) AS avg_word_count FROM intelReports ir WHERE ir.reporter_id = {id};";
+        MySqlDataReader reader = null;
+        double avg = -1;
+
+        try
+        {
+            reader = ExecuteReader(query);
+            if (reader.Read() && !reader.IsDBNull(0))
+            {
+                avg = reader.GetDouble(0);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in GetAvgNumWords: " + ex.Message);
+            throw;
+        }
+        finally
+        {
+            if (reader != null && !reader.IsClosed)
+                reader.Close();
+            if (_conn.State == System.Data.ConnectionState.Open)
+                _conn.Close();
+        }
+
+        return avg;
+    }
+
+    // מתודה שמחזירה את מספר המשימות פר איי-די
+    public int GetNumMention(int Id)
+    {
+        string query = $"SELECT num_mention FROM People WHERE id = {Id}";
+        MySqlDataReader reader = null;
         int count = -1;
 
-        if (reader.Read())
+        try
         {
-            count = int.Parse(query);
+            reader = ExecuteReader(query);
+            if (reader.Read())
+            {
+                count = int.Parse(reader["num_mention"].ToString());
+            }
         }
-        reader.Close();
-        _conn.Close();
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in GetNumMention: " + ex.Message);
+            throw;
+        }
+        finally
+        {
+            if (reader != null && !reader.IsClosed)
+                reader.Close();
+            if (_conn.State == System.Data.ConnectionState.Open)
+                _conn.Close();
+        }
 
         return count;
     }
 
-    public int GetNumMention(int Id)
+    // מדפיס את כמות הדוחות של המלשינים
+    public int GetNumReport(int Id)
     {
+        string query = $"SELECT num_report FROM People WHERE id = {Id}";
+        MySqlDataReader reader = null;
+        int numReport = -1;
 
+        try
+        {
+            reader = ExecuteReader(query);
+            if (reader.Read())
+            {
+                numReport = int.Parse(reader["num_report"].ToString());
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error in GetNumReport: " + ex.Message);
+            throw;
+        }
+        finally
+        {
+            if (reader != null && !reader.IsClosed)
+                reader.Close();
+            if (_conn.State == System.Data.ConnectionState.Open)
+                _conn.Close();
+        }
+
+        return numReport;
     }
+
 
     //===================================================================================================//
 
@@ -174,11 +322,9 @@ internal class MalshinonDAL
     }
 
     // מוסיף דוח לטבלה
-    public void InsertIntelReport(int reporterId, int targetId, string text, DateTime timeStamp)
+    public void InsertIntelReport(int reporterId, int targetId, string text)
     {
-        string timeString = timeStamp.ToString("yyyy-MM-dd HH:mm:ss");
-        string query = "INSERT INTO Intelreports (reporter_id, target_id, text, timeStamp) " +
-                       "VALUES ('" + reporterId + "', '" + targetId + "', '" + text + "', '" + timeString + "')";
+        string query = $"INSERT INTO intelReports (reporter_id, target_id, text) VALUES ({reporterId}, {targetId}, '{text}')";
         ExecuteCommand(query);
     }
 

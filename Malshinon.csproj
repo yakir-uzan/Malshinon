@@ -96,10 +96,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataAccess\MalshinonDAL.cs" />
-    <Compile Include="Models\intelReports.cs" />
+    <Compile Include="Models\IntelReports.cs" />
     <Compile Include="Services\MalshinonService.cs" />
     <Compile Include="Services\ReportService.cs" />
-    <Compile Include="UI\menu.cs" />
+    <Compile Include="UI\Menu.cs" />
     <Compile Include="Models\People.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
