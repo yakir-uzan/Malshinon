@@ -31,7 +31,7 @@ namespace Malshinon
                 switch (choice)
                 {
                     case "1":
-
+                        dal.InsertNewPerson();
                         break;
                     case "2":
 
