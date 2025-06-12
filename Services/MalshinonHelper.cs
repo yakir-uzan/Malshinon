@@ -40,8 +40,6 @@ namespace Malshinon
             string fullNameStr = $"{fullName[0]} {fullName[1]}";
             return fullNameStr;
         }
-    
     }
-
 }
 
